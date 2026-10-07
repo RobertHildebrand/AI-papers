@@ -1,0 +1,8 @@
+# Local LaTeX build intermediates; retain main.pdf as a reading copy.
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk

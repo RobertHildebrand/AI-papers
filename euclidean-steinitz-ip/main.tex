@@ -1,0 +1,829 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,array}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\N}{\mathbb N}
+\newcommand{\G}{\mathcal G}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\vol}{vol}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\supp}{supp}
+\newcommand{\poly}{\operatorname{poly}}
+\title{Euclidean Steinitz Bounds for Graver Bases\\and Integer Programming\\[0.4em]
+\large Conditional structural bounds and algorithmic consequences}
+\author{AI-generated working draft\\Prepared for Robert Hildebrand}
+\date{October 7, 2026}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Let $A\in\Z^{m\times n}$ have maximum Euclidean column norm $D$.
+Assuming an absolute-constant Euclidean Steinitz bound $C\sqrt m$, we
+prove $g_1(A)\le [K(1+D)]^m$, where $g_1$ is the maximum $\ell_1$-norm
+of a Graver element and $K$ is absolute. The proof counts lattice points
+in a Euclidean ball rather than its enclosing box. We obtain a
+bounded-variable LP--IP proximity bound of $(m+1)[K(1+D)]^m$, give explicit
+finite-state algorithms, and prove a two-level block-matrix bound
+$G[K(1+D_A G)]^r$ with $G=[K(1+D_B)]^s$, up to integer rounding.
+For columns with at most $s$ nonzeros of magnitude at most $\Delta$, the
+general bound specializes to $[O(1+\sqrt{s}\Delta)]^m$.
+A chain of equations supplies a matching $D^{\Omega(m)}$ lower bound.
+We separately formulate a colorful consequence and explain why it does
+not by itself improve the dependence on the number of blocks in four-block
+integer programming. All main upper bounds are implications of an explicit
+geometric hypothesis, as claimed in a September 2026 preprint. We do not
+verify that preprint's analytic proof or claim a new best general-IP runtime.
+\end{abstract}
+
+\paragraph{Draft status.}
+This is an exploratory AI-generated manuscript. The arguments below are
+included in full where asserted as results. The Euclidean rearrangement
+input is isolated as an assumption; the colorful section has a separate
+input. Literature comparisons identify concrete earlier bounds, not an
+exhaustive priority determination. The four-block application remains a
+research direction, not a theorem of this paper. No computational solver
+speedup or formal verification is claimed.
+
+\section{Introduction}
+
+Steinitz rearrangements give a useful way to study integer kernels: expand
+a kernel vector into a zero-sum sequence of signed columns, reorder that
+sequence into a bounded region, and use a repeated partial sum to extract
+a smaller kernel vector. The geometry of the region matters as much as
+the rearrangement bound. In particular, a Euclidean ball of radius
+$O(\sqrt m D)$ contains at most $[O(1+D)]^m$ integer points. Enclosing
+that ball in an axis-parallel box would introduce an avoidable factor
+of order $m^{m/2}$.
+
+Our purpose is to develop this observation systematically for integer
+programming. Throughout, the number of rows is the dimension in which
+Steinitz is applied; it is not the number of variables. The principal
+matrix parameter is
+\[
+ D_2(A):=\max_{j\in[n]}\norm{A_{\cdot j}}_2.
+\]
+The familiar entry bound $\Delta=\max_{i,j}|A_{ij}|$ only implies
+$D_2(A)\le\sqrt m\Delta$, and can conceal useful column geometry.
+
+\paragraph{Results.}
+Under Assumption~\ref{ass:ES}, we prove a Graver bound
+$g_1(A)\le Q_m(D_2(A))$, where $Q_m(D)=[O(1+D)]^m$ is made explicit
+below. For an optimal vertex of a linear relaxation with integral variable
+bounds, we prove proximity at most $(m+1)Q_m(D)-1$. The proof handles
+fractional coordinates by separating the rearranged walk into runs with
+fixed lattice cosets. We then give a bounded-variable dynamic program, a
+separable-convex improvement oracle, and a standard-form state graph.
+For generalized $N$-fold matrices we apply the argument first to local
+kernel vectors and then to their global images. The resulting structural
+bound is independent of $N$ and the brick widths. Finally, we give a
+balanced-subcollection consequence of a colorful Euclidean hypothesis.
+
+\paragraph{Position relative to earlier work.}
+Eisenbrand and Weismantel~\cite{EW} established the Steinitz approach to
+proximity and integer-programming algorithms. Eisenbrand, Hunkenschr\"oder,
+and Klein~\cite{EHK} used it to obtain the classical bound
+$g_1(A)\le(2m\Delta+1)^m$ and a two-level block bound. Our arguments
+retain their kernel-decomposition mechanism and change the geometry of
+the counting step. Precise comparisons appear in Section~\ref{sec:comparison}.
+Improvement over these particular bounds should not be confused with
+improvement over all later algorithms.
+
+\section{Geometric input and lattice counting}
+
+\begin{assumption}[Euclidean rearrangement hypothesis]\label{ass:ES}
+There is a fixed constant $C\ge1$ such that every finite sequence
+$v_1,\ldots,v_L\in\R^m$ with $\sum_i v_i=0$ and
+$\norm{v_i}_2\le D$ has a permutation $\pi$ satisfying
+\[
+ \norm{\sum_{i=1}^k v_{\pi(i)}}_2\le C\sqrt m D
+ \qquad(0\le k\le L).
+\]
+This holds for every $m\ge1$ and $D\ge0$, with repetitions permitted.
+\end{assumption}
+
+The release entitled \emph{The Euclidean Steinitz--Bergstr\"om theorem}
+\cite{ES2026} claims this hypothesis and a stronger prescribed-order
+signing statement. We use the rearrangement assertion as a black box.
+The algorithmic statements below are uniform once a fixed integer upper
+bound on $C$ is supplied. They do not require an algorithm for finding
+the asserted permutation.
+
+Let $B_2^m$ denote the closed Euclidean unit ball and set
+\[
+ \kappa=\sqrt{2\pi e}\,(C+1),\qquad
+ Q_m(D)=\left\lceil[\kappa(1+D)]^m\right\rceil.
+ \tag{1}\label{eq:Q}
+\]
+Ceilings in this definition are only convenient explicit upper bounds;
+implementations may replace these expressions by larger integer bounds.
+
+\begin{lemma}[Uniform translated-ball count]\label{lem:count}
+For every $a\in\R^m$ and $R\ge0$,
+\[
+ \#\big((a+\Z^m)\cap RB_2^m\big)
+ \le \frac{\pi^{m/2}}{\Gamma(m/2+1)}(R+\sqrt m/2)^m
+ \le \left[\sqrt{2\pi e}\left(\frac R{\sqrt m}+\frac12\right)\right]^m.
+ \tag{2}\label{eq:count}
+\]
+In particular, the count is at most $Q_m(D)$ for $R=C\sqrt m D$.
+\end{lemma}
+\begin{proof}
+Place a half-open unit cube centered at each of the counted lattice points.
+The cubes have disjoint interiors, each has volume one, and their union
+lies in $(R+\sqrt m/2)B_2^m$. This proves the first inequality.
+The estimate $\vol(B_2^m)\le(2\pi e/m)^{m/2}$ proves the second.
+Translation of the lattice has no effect on this argument.
+\end{proof}
+
+\begin{remark}[Rank and changes of coordinates]
+The parameter $m$ can be reduced by deleting dependent rows; this preserves
+the integer kernel and cannot increase $D_2$. For systems with right-hand
+sides one must first check consistency of the deleted equations. An
+arbitrary orthogonal change of coordinates does not preserve $\Z^m$.
+Thus applying Lemma~\ref{lem:count} after such a rotation requires keeping
+track of the rotated lattice. We do not silently replace it by $\Z^m$.
+\end{remark}
+
+\section{Graver elements and a lower bound}
+
+For $u,v\in\Z^n$, write $u\sqsubseteq v$ if $u_i v_i\ge0$ and
+$|u_i|\le|v_i|$ for every $i$. The Graver basis $\G(A)$ consists of the
+$\sqsubseteq$-minimal nonzero members of $\ker(A)\cap\Z^n$.
+Set $g_1(A)=\max\{\norm g_1:g\in\G(A)\}$, with value zero if the
+integer kernel is trivial. Every nonzero integer kernel vector is a sum
+of Graver elements conformal to it: repeatedly subtract a nonzero
+$\sqsubseteq$-minimal kernel vector until the $\ell_1$-norm is zero.
+
+\begin{theorem}[Euclidean-column Graver bound]\label{thm:graver}
+Under Assumption~\ref{ass:ES}, every $A\in\Z^{m\times n}$ satisfies
+\[
+ g_1(A)\le Q_m(D_2(A)).
+ \tag{3}\label{eq:graver}
+\]
+\end{theorem}
+\begin{proof}
+Fix $g\in\G(A)$ and let $L=\norm g_1$. Make a sequence containing
+$|g_j|$ copies of $\sign(g_j)A_{\cdot j}$ for each nonzero coordinate.
+The sum is zero and each vector has norm at most $D=D_2(A)$.
+Use Assumption~\ref{ass:ES} and let $p_k$ be the reordered partial sums.
+Then $p_0,\ldots,p_{L-1}$ are integer points of
+$C\sqrt m D B_2^m$. They are distinct: if $p_i=p_j$ with
+$0\le i<j\le L-1$, the intervening columns specify a nonzero integer
+vector $h\sqsubseteq g$ with $Ah=0$ and
+$\norm h_1=j-i<L$. There is no coordinate cancellation because all copies
+of a given column have the sign prescribed by $g$. This contradicts
+Graver minimality. Lemma~\ref{lem:count} now gives $L\le Q_m(D)$.
+\end{proof}
+
+\begin{corollary}[Entry and sparsity parameters]\label{cor:sparse}
+If $|A_{ij}|\le\Delta$ and each column has at most $s\le m$ nonzeros,
+then, under Assumption~\ref{ass:ES},
+\[
+ g_1(A)\le [O(1+\sqrt s\Delta)]^m.
+\]
+In particular the dense specialization is $[O(1+\sqrt m\Delta)]^m$.
+\end{corollary}
+
+\begin{proposition}[Exponential dependence cannot be removed]\label{prop:lower}
+For every integer $q\ge2$ and $m\ge1$ there is an integer matrix
+$A\in\Z^{m\times(m+1)}$ with at most two nonzeros per column such that
+\[
+ D_2(A)\le\sqrt{q^2+1},\qquad
+ g_1(A)=1+q+\cdots+q^m\ge q^m.
+\]
+\end{proposition}
+\begin{proof}
+Use the equations $q x_i-x_{i+1}=0$, $1\le i\le m$.
+Their integer kernel consists exactly of integer multiples of
+$g=(1,q,\ldots,q^m)$. Hence $\G(A)=\{g,-g\}$.
+The stated column bounds follow directly from the bidiagonal matrix.
+\end{proof}
+
+For this family, writing $D_0=\sqrt{q^2+1}$, the lower bound is at least
+$(2D_0/\sqrt5)^m$. Thus the coefficient exponent $m$ in
+Theorem~\ref{thm:graver} cannot be uniformly reduced for large $D$.
+This does not assert matching constants or extremality for every $D$.
+
+\subsection{An unconditional \texorpdfstring{$\ell_1$}{l1} comparison}
+It is important to compare against classical Steinitz in norms other than
+$\ell_\infty$. Let $D_1=\max_j\norm{A_{\cdot j}}_1$.
+The arbitrary-norm Steinitz theorem (as stated in~\cite{EHK}) gives
+partial sums in $mD_1B_1^m$.
+Adding unit cubes enlarges the $\ell_1$ radius by at most $m/2$.
+Since $\vol(B_1^m)=2^m/m!$, the same proof gives the unconditional bound
+\[
+ g_1(A)\le\frac{[2m(D_1+1/2)]^m}{m!}
+ \le[2e(D_1+1/2)]^m.
+ \tag{4}\label{eq:l1}
+\]
+One can round the right-hand side upward if desired. In particular,
+$[O(1+s\Delta)]^m$ already follows for $s$-sparse columns. The
+conditional Euclidean improvement replaces $s$ by $\sqrt s$ in this
+comparison; single-exponential dependence for fixed $s,\Delta$ is not
+a new qualitative conclusion. Matrices such as incidence matrices can
+have much smaller Graver elements than either generic bound predicts.
+
+\section{Proximity with integral variable bounds}\label{sec:proximity}
+
+Consider
+\begin{align*}
+ \max\{c^\top x:Ax=b,\ \ell\le x\le u,\ x\in\R^n\}&\quad\text{(LP)},\\
+ \max\{c^\top z:Az=b,\ \ell\le z\le u,\ z\in\Z^n\}&\quad\text{(IP)},
+\end{align*}
+where $A,b$ are integral and the finite entries of $\ell,u$ are integral.
+We assume an optimal LP vertex $x^*$ and an optimal integer solution exist.
+The objective vector may be rational. Bounds may be infinite when these
+existence assumptions still hold.
+
+\begin{theorem}[Bounded-variable proximity]\label{thm:proximity}
+Under Assumption~\ref{ass:ES}, there is an optimal integer solution $z^*$
+such that
+\[
+ \norm{z^*-x^*}_1\le(m+1)Q_m(D_2(A))-1.
+ \tag{5}\label{eq:prox}
+\]
+More precisely, if $x^*$ has $f$ fractional coordinates, $m+1$ may be
+replaced by $f+1$.
+\end{theorem}
+\begin{proof}
+At a vertex, at most $\rank(A)\le m$ coordinates are strictly between
+their bounds. Indeed, if there were more, their columns would admit a
+nonzero dependence supported on those coordinates, giving a sufficiently
+small feasible perturbation in both directions. A fractional coordinate
+cannot equal an integral finite bound, so $f\le m$.
+
+Choose an optimal integer solution $z$ minimizing $\norm{z-x^*}_1$.
+Such a minimizer exists since a bounded ball contains only finitely many
+integer points. Put $d=z-x^*$ and write
+\[
+ |d_j|=a_j+\theta_j,\qquad a_j=\lfloor|d_j|\rfloor,\quad 0\le\theta_j<1.
+\]
+Form a sequence of $a_j$ copies of $\sign(d_j)A_{\cdot j}$, together
+with the vector $\theta_j\sign(d_j)A_{\cdot j}$ when $\theta_j>0$.
+The sum is zero. Call the latter vectors exceptional; there are exactly
+$f$ of them. Every vector has Euclidean norm at most $D=D_2(A)$.
+
+Reorder the sequence by Assumption~\ref{ass:ES}. Exceptional vectors
+split the integral vectors into at most $f+1$ consecutive runs, some
+possibly empty. During any one run all partial sums lie in a fixed coset
+of $\Z^m$ and in $C\sqrt m D B_2^m$. If a run contained $Q_m(D)$ or more
+integral vectors, it would have at least $Q_m(D)+1$ partial sums,
+including its initial point. Lemma~\ref{lem:count} would give two equal
+sums. The intervening integral vectors specify a nonzero integer $h$
+with $Ah=0$, the same coordinate signs as $d$, and $|h_j|\le a_j\le|d_j|$.
+
+Both $x^*+h$ and $z-h$ lie coordinatewise between $x^*$ and $z$ and
+are feasible for LP and IP, respectively. Optimality implies
+$c^\top h\le0$ from LP and $c^\top h\ge0$ from IP. Thus $z-h$ is also
+integer optimal, whereas
+$\norm{z-h-x^*}_1=\norm{z-x^*}_1-\norm h_1$, a contradiction.
+
+Every run therefore has at most $Q_m(D)-1$ integral vectors. Consequently
+\[
+ \norm{z-x^*}_1
+ =\sum_j a_j+\sum_j\theta_j
+ \le(f+1)(Q_m(D)-1)+f=(f+1)Q_m(D)-1.
+\]
+The weak inequality suffices, including the case $f=0$.
+\end{proof}
+
+\begin{remark}[Why fractional exceptions are kept]
+Replacing the fractional residual by an arbitrary short integral
+decomposition would require an additional argument and might increase
+the column norm. The proof above never does this. It counts each
+integral run in its own translated lattice, using the uniformity of
+Lemma~\ref{lem:count}.
+\end{remark}
+
+The integrality gap is at most
+$\norm c_\infty((m+1)Q_m(D)-1)$, by H\"older's inequality.
+For rational data this statement applies after the usual integral
+encoding of equality constraints; the resulting value of $D$ must be
+computed for the actual encoded matrix.
+
+\paragraph{Comparison with the Eisenbrand--Weismantel bound.}
+For an entry bound $\Delta$, their bounded-variable proximity theorem
+gives $m(2m\Delta+1)^m$~\cite{EW}. Since $D_2(A)\le\sqrt m\Delta$,
+Theorem~\ref{thm:proximity} gives instead
+\[
+ (m+1)[O(1+\sqrt m\Delta)]^m.
+\]
+For $\Delta\ge1$, the displayed dimension factor is reduced from
+$m^m$ to $m^{m/2}$, up to absolute constants to the power $m$ and
+the leading polynomial factor. The stronger column-norm formulation
+retains any additional saving from sparsity. This comparison is to that
+specific theorem; later determinant-based proximity results must also
+be considered, as discussed in Section~\ref{sec:comparison}.
+
+\section{Explicit algorithmic consequences}\label{sec:algorithms}
+
+The bounds are useful without constructing a Steinitz order. A dynamic
+program may search a region guaranteed to contain an appropriate witness.
+Nevertheless, a structural bound is not automatically a running-time
+bound. We give explicit algorithms to make this distinction precise.
+All counts below concern arithmetic operations on numbers of polynomial
+encoding length, with the corresponding bit factors understood. Any
+fixed constant used to instantiate Assumption~\ref{ass:ES} is part of
+the algorithm specification, not something inferred from the input.
+
+\subsection{A bounded-variable exact dynamic program}
+
+\begin{proposition}\label{prop:boundedDP}
+Suppose all variable bounds are finite integers. Given an optimal LP
+vertex $x^*$, set $Q=Q_m(D)$ and $R=(m+1)Q+m$.
+Under Assumption~\ref{ass:ES}, IP can be solved or declared infeasible
+using
+\[
+ O\!\left(n(R+1)^2(2\lfloor DR\rfloor+1)^m\right)
+ \tag{6}\label{eq:DPtime}
+\]
+arithmetic operations in addition to solving LP.
+For nonzero integer $A$, the bit-time bound is
+\[
+ [O(1+D)]^{O(m^2)}\poly(n,L),
+\]
+where $L$ is the input length. LP infeasibility is handled first.
+\end{proposition}
+\begin{proof}
+Let $w=\lfloor x^*\rfloor$ coordinatewise. Since the bounds are integral,
+$w$ satisfies them, and $\norm{w-x^*}_1\le m$. If IP is feasible, finite
+bounds imply existence of an optimum, and Theorem~\ref{thm:proximity}
+gives an optimal solution $w+y$ with $\norm y_1\le R$.
+
+Process coordinates in order. Store the best value of
+$\sum_{j\le i}c_jy_j$ for every state
+\[
+ (i,t,k),\qquad t=\sum_{j\le i}A_{\cdot j}y_j\in\Z^m,
+ \quad k=\sum_{j\le i}|y_j|\le R.
+\]
+Each transition chooses an integer $y_i\in[-R,R]$ satisfying
+$\ell_i-w_i\le y_i\le u_i-w_i$. All reachable $t$ satisfy
+$\norm t_2\le DR$, hence each coordinate has absolute value at most
+$\lfloor DR\rfloor$. Initialize at $(0,0,0)$ and accept states with
+$t=b-Aw$ and $k\le R$. This gives the stated state and transition count.
+Every accepted solution is feasible, and an optimum is represented if
+one exists. If $A=0$, independent coordinate optimization suffices.
+\end{proof}
+
+This intentionally simple algorithm has a quadratic-in-$m$ exponent.
+It must not be advertised as a $[O(1+D)]^{O(m)}$ bounded-variable
+algorithm. Faster augmentation or convolution routines would require
+separate analysis.
+
+\subsection{Separable convex objectives: an improvement oracle}
+
+Let $F(x)=\sum_i f_i(x_i)$, where each $f_i$ is discretely convex on
+its integer interval: $f_i(t+1)-f_i(t)$ is nondecreasing.
+Suppose evaluations and comparisons are available exactly.
+
+\begin{proposition}\label{prop:convex}
+Given a feasible integer point $x$ with finite integer bounds, one can
+find an improving feasible point or certify optimality for $F$ by searching
+only directions $y$ with $Ay=0$ and $\norm y_1\le G$, where
+$G=Q_m(D)$ under Assumption~\ref{ass:ES}.
+The search uses
+\[
+ O\!\left(n(G+1)^2(2\lfloor DG\rfloor+1)^m\right)
+\]
+arithmetic operations and evaluations of objective differences.
+\end{proposition}
+\begin{proof}
+Use the DP from Proposition~\ref{prop:boundedDP}, centered at $x$, with
+budget $G$, target zero, and transition cost
+$f_i(x_i+y_i)-f_i(x_i)$. Minimize this cost.
+If $x$ is not optimal, let $z$ be better and decompose $z-x$ into Graver
+elements $g^1,\ldots,g^t$ conformal to $z-x$. Each $x+g^j$ satisfies
+the bounds. Discrete convexity, applied to monotone increments in each
+coordinate, gives
+\[
+ F(z)-F(x)\ge\sum_{j=1}^t\big(F(x+g^j)-F(x)\big).
+\]
+Since the left-hand side is negative, at least one summand is negative.
+Theorem~\ref{thm:graver} ensures that direction is searched.
+\end{proof}
+
+This is an exact optimality and improvement oracle, not a bound on the
+number of iterations of unit-step augmentation. Repeatedly taking an
+arbitrary improving step can have poor iteration complexity. In particular,
+we do not infer a new general MINLP algorithm: separability and discrete
+convexity are essential in this proposition.
+
+\subsection{Standard form and a Euclidean tube}
+
+Consider $Ax=b$, $x\in\Z^n_{\ge0}$, and put $B=\norm b_1$.
+Assume $D>0$; for an integer matrix this implies $D\ge1$.
+\begin{lemma}\label{lem:tube}
+Under Assumption~\ref{ass:ES}, every feasible $x$ admits an ordering of
+its multiset of columns whose partial sums lie in
+\[
+ [0,b]+C\sqrt m D B_2^m.
+ \tag{7}\label{eq:tube}
+\]
+\end{lemma}
+\begin{proof}
+Append $M$ copies of $-b/M$ to the multiset, with
+$M=\max\{1,\lceil\norm b_2/D\rceil\}$. All appended vectors have norm
+at most $D$, and the total is zero. Apply Assumption~\ref{ass:ES} and
+delete the appended vectors. A partial sum of the retained columns has
+the form $p+(k/M)b$, where $\norm p_2\le C\sqrt m D$ and $0\le k\le M$.
+\end{proof}
+
+\begin{proposition}[Explicit tube graph]\label{prop:tubegraph}
+Under Assumption~\ref{ass:ES}, standard-form feasibility has a finite
+graph algorithm with at most
+\[
+ S\le (B+2)[K_0(1+D)]^m
+ \tag{8}\label{eq:S}
+\]
+vertices and at most $nS$ directed edges, for an absolute constant $K_0$.
+After construction, breadth-first search takes $O(nS)$ operations.
+For a linear objective $c^\top x$, maximum-weight walks give either an
+optimum or an unboundedness certificate in $O(nS^2)$ operations.
+The graph can be constructed in $(B+2)[K_1(1+D)]^m\poly(n,m,L)$ time
+for another absolute constant $K_1$.
+\end{proposition}
+\begin{proof}
+For $B>0$, take the $B+1$ centers $a_k=(k/B)b$, $0\le k\le B$.
+For $B=0$ take only the center zero. Adjacent centers have Euclidean
+distance at most one. Let the vertices be all integer points in the
+union of the balls of radius $T=C\sqrt m D+1$ about these centers.
+This union contains the tube in \eqref{eq:tube}.
+Lemma~\ref{lem:count}, with
+$T/\sqrt m+1/2\le CD+3/2$, proves \eqref{eq:S} for a suitable $K_0$.
+Include an edge $p\longrightarrow p+A_{\cdot j}$, labeled $j$, whenever
+both endpoints occur. A walk from zero to $b$ gives a feasible nonnegative
+integer solution by counting its labels. Lemma~\ref{lem:tube} proves
+the converse. Edges of zero displacement are allowed.
+
+For completeness, the vertex enumeration need not visit an enclosing
+box. Enumerate coordinates of an integer point in a ball recursively,
+retaining a prefix only if its squared distance in the assigned
+coordinates is at most $T^2$. Every retained prefix has an integer
+completion in the larger ball of radius $T+\sqrt m/2$: round the remaining
+center coordinates to nearest integers. At any fixed depth distinct
+prefixes have distinct such completions. Applying the cube argument
+again bounds the total number of prefixes over all depths by
+$(m+1)[\sqrt{2\pi e}(CD+2)]^m$. This proves the claimed construction
+bound, including deduplication and edge lookup up to polynomial factors.
+Radii may be enlarged to rational, polynomial-bit descriptions using a
+fixed upper bound on $C$, without changing these estimates.
+
+Give an edge labeled $j$ weight $c_j$. Every feasible solution yields a
+walk of the same objective value, and every walk yields a feasible solution.
+Consequently the graph represents exactly the attainable objective values.
+Restrict to vertices reachable from zero and able to reach $b$. A positive
+cycle there gives unbounded objective values; absent such a cycle, a
+maximum-weight walk can be taken simple after deleting nonpositive
+cycles. Bellman--Ford with negated weights gives the stated bound and
+detects the relevant positive cycles.
+\end{proof}
+
+The dependence on $B$ is numerical, not logarithmic. The proposition is
+an explicit geometric version of a state-graph argument, not a competitive
+replacement for algorithms that avoid this dependence. It also does not
+enforce upper bounds on label multiplicities, which is why bounded-variable
+IP was treated separately.
+
+\section{Two-level block matrices}\label{sec:block}
+
+Let $r,s\ge1$ and consider
+\[
+ H=\begin{pmatrix}
+ A_1&A_2&\cdots&A_N\\
+ B_1&0&\cdots&0\\
+ 0&B_2&\cdots&0\\
+ \vdots&\vdots&\ddots&\vdots\\
+ 0&0&\cdots&B_N
+ \end{pmatrix},
+ \qquad A_i\in\Z^{r\times t_i},\quad B_i\in\Z^{s\times t_i}.
+\]
+The brick widths $t_i$ need not be equal. Set
+\[
+ D_A=\max_{i,j}\norm{(A_i)_{\cdot j}}_2,
+ \qquad D_B=\max_{i,j}\norm{(B_i)_{\cdot j}}_2.
+\]
+
+\begin{theorem}[Two-level Euclidean bound]\label{thm:block}
+Under Assumption~\ref{ass:ES}, with $G=Q_s(D_B)$,
+\[
+ g_1(H)\le G\,Q_r(D_A G).
+ \tag{9}\label{eq:block}
+\]
+More generally, $G$ can be any integer upper bound on
+$\max_i g_1(B_i)$ with $G\ge1$, using Assumption~\ref{ass:ES} only in
+the $r$-dimensional global step.
+\end{theorem}
+\begin{proof}
+Take $g\in\G(H)$ and partition it into bricks $g_i$. Since $B_i g_i=0$,
+write each nonzero brick as a conformal sum
+$g_i=\sum_{j=1}^{q_i}h_{ij}$ with $h_{ij}\in\G(B_i)$.
+The bound on $G$ gives $\norm{h_{ij}}_1\le G$.
+The global images $v_{ij}=A_i h_{ij}$ satisfy
+\[
+ \sum_{i,j}v_{ij}=0,\qquad
+ \norm{v_{ij}}_2\le\sum_k |(h_{ij})_k|\norm{(A_i)_{\cdot k}}_2
+ \le D_A G.
+\]
+There can be no nonempty proper zero-sum subcollection of these images.
+Such a subcollection would sum the corresponding local pieces to a
+nonzero integer kernel vector $h\sqsubseteq g$ different from $g$.
+The selected and omitted pieces are nonzero and conformal, so neither
+can cancel internally. This would contradict Graver minimality.
+The partial-sum argument of Theorem~\ref{thm:graver}, now in dimension
+$r$, gives $\sum_i q_i\le Q_r(D_A G)$. Hence
+$\norm g_1=\sum_{i,j}\norm{h_{ij}}_1\le GQ_r(D_A G)$.
+\end{proof}
+
+The formula does not depend on the number of bricks. It also permits
+sharper application-specific local bounds in place of $Q_s(D_B)$.
+For example, if a local block has a small explicitly known Graver basis,
+there is no reason to discard that information.
+
+\paragraph{Comparison with the classical two-level calculation.}
+For an entry bound $\Delta\ge1$, the corresponding bound in
+\cite[Lemma 3]{EHK} is
+\[
+ G_{\rm old}(2r\Delta G_{\rm old}+1)^r,
+ \qquad G_{\rm old}=(2s\Delta+1)^s.
+ \tag{10}\label{eq:blockold}
+\]
+Our dense substitution $D_B\le\sqrt s\Delta$, $D_A\le\sqrt r\Delta$
+gives, with absolute constants displayed schematically,
+\[
+ G\,[K(1+\sqrt r\Delta G)]^r,
+ \qquad G\le[K(1+\sqrt s\Delta)]^s.
+ \tag{11}\label{eq:blockdense}
+\]
+Ignoring only factors $K^{O(rs+r+s)}$, the dimension factors in
+\eqref{eq:blockold} are $s^{s(r+1)}r^r$ whereas those in
+\eqref{eq:blockdense} are $s^{s(r+1)/2}r^{r/2}$; the coefficient exponent
+in both comparisons is $s(r+1)+r$. This is a comparison of two structural
+bounds obtained by the same two-level decomposition, not an assertion
+about the best available complete $N$-fold algorithm.
+
+If local columns have at most $a$ nonzeros and global columns at most
+$b$, replace $\sqrt s$ and $\sqrt r$ by $\sqrt a$ and $\sqrt b$ in
+\eqref{eq:blockdense}. However, the global images $A_i h_{ij}$ need not
+themselves be sparse. The proof uses their norm bound $D_A G$, not an
+unjustified assertion that they retain the original support size.
+
+\paragraph{Algorithmic meaning.}
+Theorem~\ref{thm:block} bounds the total $\ell_1$-size of a Graver
+augmentation independently of $N$. It can be used as a structural input
+where an augmentation routine has an explicitly stated dependence on
+this size. Running the generic DP of Section~\ref{sec:algorithms} on
+all $r+Ns$ rows would lose the block advantage. A faster block-aware
+implementation and its full iteration bound are not supplied here.
+
+\section{Colorful sequences and what they do not yet prove}\label{sec:colorful}
+
+The ordinary zero-sum hypothesis is sufficient for all preceding results.
+This section uses the following distinct input, also claimed as a
+consequence in the released preprint~\cite{ES2026}.
+
+\begin{assumption}[Colorful Euclidean hypothesis]\label{ass:colorful}
+For $k$ sequences $v_{j,1},\ldots,v_{j,L}\in\R^d$, $1\le j\le k$,
+with $\norm{v_{j,i}}_2\le D$ and $\sum_{j,i}v_{j,i}=0$, there are
+permutations $\pi_j$ such that
+\[
+ \norm{\sum_{j=1}^k\sum_{i=1}^{t}v_{j,\pi_j(i)}}_2
+ \le C_{\rm col}\sqrt d D\qquad(0\le t\le L),
+\]
+where $C_{\rm col}$ is absolute and independent of $k,L$.
+\end{assumption}
+
+The source obtains $C_{\rm col}=2C$ from its stronger signing result
+and matrix transference. We do not claim that
+Assumption~\ref{ass:colorful} has been proved here from
+Assumption~\ref{ass:ES} alone. Define
+\[
+ Q^{\rm col}_d(D)=
+ \left\lceil[\sqrt{2\pi e}(C_{\rm col}+1)(1+D)]^d\right\rceil.
+\]
+
+\begin{definition}
+An array of integer vectors $v_{j,i}$ with $k$ rows and $L$ entries per
+row, whose total sum is zero, is \emph{balanced-indecomposable} if there
+are no subsets $I_j\subseteq[L]$ of a common cardinality
+$t\in\{1,\ldots,L-1\}$ such that
+$\sum_j\sum_{i\in I_j}v_{j,i}=0$.
+\end{definition}
+
+\begin{proposition}\label{prop:balanced}
+Under Assumption~\ref{ass:colorful}, a balanced-indecomposable array
+with $\norm{v_{j,i}}_2\le D$ has
+\[
+ L\le Q^{\rm col}_d(D).
+ \tag{12}\label{eq:balanced}
+\]
+\end{proposition}
+\begin{proof}
+Let $p_t$ be its synchronous partial sums after the row permutations.
+The $L$ integer points $p_0,\ldots,p_{L-1}$ lie in
+$C_{\rm col}\sqrt d D B_2^d$. A repetition $p_a=p_b$, $a<b<L$,
+selects $b-a$ entries from each row with total zero, contrary to the
+definition. The translated-ball count proves the assertion.
+\end{proof}
+
+The bound controls the number of rounds $L$, not the total number $kL$
+of vectors. This distinction is essential. With $L=1$, any number of rows
+can have total zero, and the balanced-indecomposability condition has no
+proper positive number of rounds to exclude. Thus the proposition cannot
+alone remove the number of colors from a Graver norm bound.
+
+\begin{proposition}[Centering when the total is nonzero]\label{prop:center}
+Under Assumption~\ref{ass:colorful}, an arbitrary array of the same
+shape and vector bound admits row permutations for which, writing
+$T=\sum_{j,i}v_{j,i}$,
+\[
+ \norm{\sum_{j=1}^k\sum_{i=1}^t v_{j,\pi_j(i)}-\frac tL T}_2
+ \le 2C_{\rm col}\sqrt d D\qquad(0\le t\le L).
+\]
+\end{proposition}
+\begin{proof}
+Subtract the mean $\mu_j=L^{-1}\sum_i v_{j,i}$ from every entry in
+row $j$. Each centered vector has norm at most $2D$ and the total is
+zero. Apply Assumption~\ref{ass:colorful} and then restore the means.
+\end{proof}
+
+\paragraph{Four-block IP remains an application to complete.}
+Oertel, Paat, and Weismantel~\cite{OPW} develop colorful rearrangements
+for block-structured proximity. B\'ar\'any~\cite{Barany} later improves
+the arbitrary-norm row-permutation bound to $4d-2$.
+Therefore a comparison only against the earlier $40d^5$ bound would
+overstate what is new. With entrywise magnitude $M$, Euclidean conversion
+gives $D\le\sqrt d M$, so the new rearrangement radius is $O(dM)$,
+the same coordinate scale as the later arbitrary-norm bound. An additional
+saving can come from ball counting, provided the proof really supplies
+integer partial sums or a controlled number of lattice cosets.
+
+To obtain a full four-block theorem, one must verify three further facts
+inside that decomposition: the Euclidean norms of the derived vectors,
+the precise balanced selection that yields an admissible kernel move,
+and the number of exceptional shifts or rounds that need separate counting.
+Neither Proposition~\ref{prop:balanced} nor
+Proposition~\ref{prop:center} establishes these facts. We therefore make
+no claim here of an improved polynomial exponent in the number of blocks.
+
+\section{Comparisons and limits of the conclusions}\label{sec:comparison}
+
+\paragraph{Dense general-IP algorithms.}
+Jansen and Rohwedder~\cite{JR} already give algorithms with the
+$\sqrt m\Delta$ base, and formulate their analysis using hereditary
+discrepancy. Thus the dense specialization of our bound does not by
+itself improve the known general-IP runtime. Our tube algorithm also
+retains a numerical dependence on $\norm b_1$. Its role is to show
+constructively how the geometric hypothesis can certify a smaller state
+space, rather than to establish a best running time.
+
+\paragraph{Determinant-based proximity.}
+For full row rank, let $\Delta_m(A)$ be the largest absolute determinant
+of an $m\times m$ submatrix. In nonnegative standard form,
+Lee, Paat, Stallknecht, and Xu~\cite{LPSX} prove proximity less than
+\[
+ 3m^2\log(2\sqrt m\,\Delta_m(A)^{1/m})\,\Delta_m(A).
+\]
+Hadamard gives $\Delta_m(A)\le D_2(A)^m$. Their result can therefore
+be stronger than our direct bound on the overlapping formulation.
+Theorem~\ref{thm:proximity} includes integral upper and lower bounds,
+but we do not infer novelty merely from this difference without checking
+the applicable extensions. It is a complete implication of the geometric
+hypothesis and a convenient direct proof, not a universal improvement.
+
+\paragraph{What the sparse comparison establishes.}
+For fixed $s,\Delta$, both \eqref{eq:l1} and Corollary~\ref{cor:sparse}
+give $2^{O(m)}$. For growing $s$, the displayed Euclidean upper bound
+replaces a base proportional to $s\Delta$ by one proportional to
+$\sqrt s\Delta$. The constants are absolute and inherited from the
+geometric hypothesis. This comparison does not establish that every
+matrix with those parameters has Graver elements near either upper bound.
+
+\paragraph{Practical interpretation.}
+Smaller structural bounds can reduce a certified search region, but hidden
+constants, state representation, preprocessing, and instance structure
+all matter. No implementation or benchmark in this manuscript supports
+a claim of faster commercial branch-and-bound or cutting-plane solvers.
+Likewise, the convex improvement oracle does not extend to arbitrary
+nonconvex objectives. A useful experimental follow-up would compare
+actual reachable states in Euclidean and coordinate-box neighborhoods
+for selected bounded-column instances.
+
+\section{Further questions}
+
+The most immediate theoretical task is a comprehensive novelty audit of
+the Euclidean-column Graver bound, including bounds expressed through
+determinants, circuits, discrepancy, and other column norms. The lower
+example proves the necessity of exponential growth in $m$ and the
+coefficient scale, but does not settle the best absolute base.
+
+A second task is a full block-aware augmentation analysis using
+Theorem~\ref{thm:block}. The structural bound should be substituted into
+an explicitly chosen algorithm, including step lengths, feasibility
+initialization, and the number of augmentation phases. Doing so would
+determine whether the dimension-factor improvement survives all other
+terms in the runtime.
+
+A third task is the four-block program described in
+Section~\ref{sec:colorful}. Its main difficulty is preserving the correct
+integer or translated-lattice structure through the colorful decomposition.
+An improvement in a rearrangement radius alone does not settle it.
+
+Finally, one can ask for anisotropic versions: choose a norm adapted to
+the columns and count the actual image lattice in the resulting body.
+Any such result must control both the body and the lattice after
+preconditioning. Optimizing only the column norm while forgetting the
+lattice density would give an invalid improvement.
+
+\appendix
+\section{Dependency and verification ledger}
+
+The logical dependencies of the stated results are as follows.
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.40\textwidth}>{\raggedright\arraybackslash}p{0.48\textwidth}}
+\toprule
+Result & External geometric input\\
+\midrule
+Translated-ball count; chain lower bound & None\\
+Unconditional $\ell_1$ comparison & Classical arbitrary-norm Steinitz theorem\\
+Graver bound; proximity; state algorithms & Assumption~\ref{ass:ES}\\
+Two-level block bound & Assumption~\ref{ass:ES} locally and globally, or a supplied local bound\\
+Balanced-array bound; centering & Assumption~\ref{ass:colorful}\\
+Improved four-block IP theorem & Not proved in this draft\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The proofs were developed as implications of the stated assumptions.
+The analytic proof in the September 2026 release has not been independently
+verified here. The release is a mutable online source; the bibliography
+records its dated directory and the access date. Before submission, an
+archived revision or commit should be fixed, author metadata verified,
+and any available corrections checked. No Lean verification is included.
+Finite examples or numerical experiments, if added, cannot replace the
+universal arguments above. The repository accompanying this draft records
+compilation and any small-instance checks separately.
+
+\begin{thebibliography}{9}
+\raggedright
+
+\bibitem{ES2026}
+OpenAI math preprint release,
+\emph{The Euclidean Steinitz--Bergstr\"om theorem},
+dated directory September 24, 2026.
+\href{https://github.com/openai/math/tree/main/preprints/The-Euclidean-Steinitz-Bergstrom-theorem-September-24-2026}{Repository source}.
+The statements used here are in \texttt{build/introduction.tex} and
+\texttt{build/consequences.tex}. Accessed October 7, 2026.
+Repository attribution is used here without assigning individual authorship.
+
+\bibitem{EW}
+F. Eisenbrand and R. Weismantel,
+\emph{Proximity results and faster algorithms for Integer Programming
+using the Steinitz Lemma},
+\href{https://arxiv.org/abs/1707.00481}{arXiv:1707.00481}, 2017;
+version 3, 2019.
+
+\bibitem{EHK}
+F. Eisenbrand, C. Hunkenschr\"oder, and K.-M. Klein,
+\emph{Faster Algorithms for Integer Programs with Block Structure},
+\href{https://arxiv.org/abs/1802.06289}{arXiv:1802.06289}, 2018.
+
+\bibitem{JR}
+K. Jansen and L. Rohwedder,
+\emph{On Integer Programming, Discrepancy, and Convolution},
+\href{https://arxiv.org/abs/1803.04744v4}{arXiv:1803.04744v4}, 2022.
+
+\bibitem{LPSX}
+J. Lee, J. Paat, I. Stallknecht, and L. Xu,
+\emph{Improving proximity bounds using sparsity},
+\href{https://arxiv.org/abs/2001.04659}{arXiv:2001.04659}, 2020.
+
+\bibitem{OPW}
+T. Oertel, J. Paat, and R. Weismantel,
+\emph{A Colorful Steinitz Lemma with Application to Block-Structured
+Integer Programs},
+\href{https://arxiv.org/abs/2201.05874v2}{arXiv:2201.05874v2}, 2022.
+
+\bibitem{Barany}
+I. B\'ar\'any,
+\emph{A matrix version of the Steinitz lemma},
+\href{https://arxiv.org/abs/2308.10102v2}{arXiv:2308.10102v2}, 2024.
+
+\end{thebibliography}
+\end{document}
