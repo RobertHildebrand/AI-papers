@@ -1,0 +1,145 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\R}{\mathbb R}
+\DeclareMathOperator{\intr}{int}
+\title{An ETH Lower Bound for Reverse-Convex Integer Feasibility\protect\\with a Boundary Hyperplane Cover}
+\author{Research question and direction: Robert Hildebrand\\AI-assisted mathematical draft}
+\date{October 26, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We give an elementary reduction from Clique to integer feasibility in a rational box after removing the interiors of bounded, full-dimensional, axis-aligned rational boxes. In dimension $n=k$, the construction for an $N$-vertex graph has a supplied boundary hyperplane cover of size $d=2k(N+1)$ and polynomial encoding length. Consequently, assuming the Exponential Time Hypothesis, there is no deterministic algorithm with running time $f(n)d^{o(n)}L^{O(1)}$, where $L$ is the total input bit length and $f$ is any computable function. The problem is also W[1]-hard parameterized by dimension. This explains why a dimension-linear exponent cannot in general be eliminated from arrangement-based algorithms. It does not require explicit cell enumeration, establish the optimal constant in that exponent, or settle the case of a fixed number of excluded sets.
+\end{abstract}
+
+\section{Problem and scope}
+Let $P\subseteq\R^n$ be a bounded rational polyhedron and let $C_1,\ldots,C_m\subseteq\R^n$ be closed convex sets. We consider the decision problem
+\begin{equation}\label{eq:problem}
+\left(P\setminus\bigcup_{a=1}^m\intr(C_a)\right)\cap\Z^n\ne\varnothing.
+\end{equation}
+A supplied \emph{boundary hyperplane cover} is a finite collection $\mathcal H$ of rational affine hyperplanes such that
+\[
+\partial C_a\cap\partial C_b\subseteq\bigcup_{H\in\mathcal H}H
+\qquad(a\ne b).
+\]
+Write $d=|\mathcal H|$. This is the boundary-cover setting of Hildebrand and G\"o\ss~\cite{HG}. Their Theorem 44 gives a fixed-dimensional polynomial-time feasibility algorithm through a decomposition using the cover. We ask whether the dimension can be removed from the exponent of $d$, with only polynomial dependence on the remaining input length.
+
+For the lower bound all excluded sets are explicitly described boxes. Thus $L$ denotes the total binary encoding length of $P$, these boxes, and the supplied cover. No difficult oracle is hidden in the construction. In particular, polynomial-time membership and interior-separation queries are available directly from the box inequalities.
+
+We use the standard consequence of the Exponential Time Hypothesis (ETH) that Clique on an $N$-vertex graph with target size $k$ has no deterministic algorithm of running time $F(k)N^{o(k)}$, for any computable $F$; see Chen, Huang, Kanj, and Xia~\cite{CHKX}. Clique is also W[1]-hard with parameter $k$.
+
+\section{Encoding forbidden pairs by boxes}
+Let $G=([N],E)$ be a simple undirected graph. We may assume $2\le k\le N$; the other cases are directly decidable. Put
+\[
+n=k,\qquad P=[1,N]^k,
+\]
+and define the set of forbidden ordered pairs
+\[
+F=\{(u,v)\in[N]^2:u=v\ \text{or}\ \{u,v\}\notin E\}.
+\]
+For every $1\le i<j\le k$ and $(u,v)\in F$, define
+\begin{equation}\label{eq:box}
+C_{ijuv}=\prod_{\ell=1}^k I_\ell,
+\qquad
+I_\ell=
+\begin{cases}
+[u-\tfrac14,u+\tfrac14],&\ell=i,\\
+[v-\tfrac14,v+\tfrac14],&\ell=j,\\
+[0,N+1],&\ell\notin\{i,j\}.
+\end{cases}
+\end{equation}
+Every such box is closed, bounded, convex, and full-dimensional. The wider intervals in the unselected coordinates ensure that every coordinate in $[1,N]$ is strictly interior to those intervals. There are
+\[
+m=\binom{k}{2}|F|\le\binom{k}{2}N^2
+\]
+excluded boxes. The sets are permitted to extend outside $P$.
+
+\begin{lemma}\label{lem:encoding}
+For $x\in P\cap\Z^k$, one has
+\[
+x\in\intr(C_{ijuv})\quad\Longleftrightarrow\quad x_i=u\ \text{and}\ x_j=v.
+\]
+Consequently, \eqref{eq:problem} holds for the constructed instance if and only if $G$ has a $k$-clique.
+\end{lemma}
+\begin{proof}
+The only integer strictly between $u-1/4$ and $u+1/4$ is $u$, and similarly for $v$. Every other coordinate of $x$ lies strictly between $0$ and $N+1$. This proves the equivalence. A point avoids all excluded interiors exactly when every pair of selected vertices is distinct and adjacent. Such a tuple specifies a $k$-clique, and any ordering of a $k$-clique gives such a point.
+\end{proof}
+
+\begin{lemma}\label{lem:cover}
+The constructed boxes admit a supplied boundary hyperplane cover of size $d=2kN+2k$. The full instance has encoding length $L=O(k^4N^2\log(N+1))$ in a standard dense rational inequality encoding.
+\end{lemma}
+\begin{proof}
+Use the hyperplanes
+\begin{align*}
+\mathcal H={}&\{x_\ell=t-\tfrac14,\ x_\ell=t+\tfrac14:
+                 \ell\in[k],\ t\in[N]\}\\
+&\quad\cup\{x_\ell=0,\ x_\ell=N+1:\ell\in[k]\}.
+\end{align*}
+They are distinct and number $2k(N+1)$. Every facet of every box in \eqref{eq:box} lies on one of these hyperplanes. In fact this covers each entire boundary, a stronger property than covering pairwise boundary intersections.
+
+There are $O(k^2N^2)$ boxes with $2k$ inequalities each. Each coefficient has $O(\log(N+1))$ bits; dense rows also contain $k$ entries. A direct dense accounting therefore gives $O(k^4N^2\log(N+1))$ bits, while storing each axis-aligned bound by its coordinate and endpoints gives $O(k^3N^2\log(N+1))$ bits (using $k\le N$). For a uniform dense encoding, use the former bound. Both are $k^{O(1)}N^{O(1)}$ and suffice below. The domain and cover are smaller than these bounds and can be generated in polynomial time.
+\end{proof}
+
+\section{Complexity consequences}
+\begin{theorem}\label{thm:eth}
+Assuming ETH, there are no computable function $f$, constant $c\ge0$, and nonnegative function $g$ with $g(n)/n\to0$ for which a deterministic algorithm decides \eqref{eq:problem} on all inputs in time
+\[
+f(n)d^{g(n)}L^c.
+\]
+This holds even when $P$ and all excluded sets are axis-aligned rational boxes and every excluded box is bounded and full-dimensional.
+\end{theorem}
+\begin{proof}
+Apply the hypothetical algorithm to the reduction above. We have $n=k$, $d=2k(N+1)\le4kN$, and, using dense encoding, $L\le A k^4N^2\log(N+1)$ for an absolute constant $A$. Hence the running time is bounded by
+\[
+f(k)(4kN)^{g(k)}\bigl(Ak^4N^2\log(N+1)\bigr)^c
+\le F(k)N^{g(k)+3c}
+\]
+for some computable $F$, after absorbing factors depending only on $k$ and the elementary logarithmic bound into $F$ and the displayed exponent. Since $g(k)+3c=o(k)$, this is forbidden by the ETH lower bound for Clique. The polynomial time required to construct the instance adds only another constant to the exponent of $N$, and so does not affect the contradiction.
+\end{proof}
+
+\begin{corollary}
+The problem is W[1]-hard parameterized by dimension $n$, even under the box restrictions in Theorem~\ref{thm:eth}. In particular, an algorithm with running time $f(n)L^{O(1)}$ would imply $\mathrm{FPT}=\mathrm{W[1]}$.
+\end{corollary}
+\begin{proof}
+The construction is a parameterized reduction from Clique, has polynomial output size, and maps the parameter $k$ to $n=k$.
+\end{proof}
+
+\section{What the lower bound does and does not establish}
+Theorem~\ref{thm:eth} excludes a sublinear-in-dimension exponent of the supplied cover size when the dependence on the rest of the input is polynomial with an absolute exponent. Several distinctions are essential.
+\begin{enumerate}
+\item \textbf{It is not an exact $d^n$ lower bound.} The result does not exclude $d^{n/2}L^{O(1)}$, for example. It gives the usual ETH obstruction to a $d^{o(n)}L^{O(1)}$ bound, allowing an arbitrary computable multiplicative factor in $n$.
+\item \textbf{The number of excluded sets grows.} Here $m=O(k^2N^2)$. The reduction does not settle the case of an absolute constant $m$, nor does it exclude a bound $f(n,m)\operatorname{poly}(d,L)$ with arbitrary dependence on $m$. A restriction fixing only the number of nonpolyhedral excluded sets does not avoid the reduction: that number is zero.
+\item \textbf{The polynomial dependence on $L$ matters.} A bound $d^{O(1)}L^{O(n)}$ is not ruled out. It could transfer the dimension-dependent exponent from the cover parameter to the encoding length. The theorem does not isolate $d$ while holding all other input parameters constant.
+\item \textbf{The cover is supplied, not minimal.} The construction provides a valid cover with the stated size; no minimality claim is needed. Its hyperplanes cover individual boundaries as well as their pairwise intersections.
+\item \textbf{Enumeration itself is not necessary.} The reduction concerns the feasibility decision problem, not the output of a decomposition. It does not require an algorithm to explicitly enumerate all arrangement cells. Adaptive search, early termination, pruning, and improved constants in the exponent remain possible.
+\item \textbf{No difficult convex oracle is responsible.} The hardness already occurs for explicit boxes with small rational denominators. The same obstruction applies to a broader oracle-based algorithm whenever its oracle calls can be simulated in polynomial time on these inputs and its total running time has the excluded form.
+\end{enumerate}
+
+The resulting conclusion for the boundary-cover framework is therefore limited but substantive: for a variable number of excluded sets, a dimension-linear exponent is conditionally unavoidable somewhere in this parameter regime. Whether stronger algorithms exist for a fixed total number of excluded convex sets is a separate question.
+
+\paragraph{Status and provenance.}
+Robert Hildebrand formulated the research question and directed the investigation connecting the boundary-cover framework to dimension-dependent complexity. OpenAI Codex assisted with developing the reduction, drafting the proof and exposition, and implementing and running the finite verification checks. This contribution statement credits research direction without asserting that Hildebrand has reviewed or approved every mathematical claim. It has not been peer reviewed, and no claim of literature priority is made for this elementary encoding. The repository includes a small exhaustive checker of the reduction; finite checks supplement, but do not replace, the proof. The ETH premise is a cited external result, while the geometric reduction and parameter accounting are given explicitly here.
+
+\begin{thebibliography}{9}
+\bibitem{CHKX}
+J. Chen, X. Huang, I. A. Kanj, and G. Xia.
+\newblock Strong computational lower bounds via parameterized complexity.
+\newblock \emph{Journal of Computer and System Sciences} 72(8):1346--1367, 2006.
+\newblock \href{https://doi.org/10.1016/j.jcss.2006.04.007}{doi:10.1016/j.jcss.2006.04.007}.
+
+\bibitem{HG}
+R. Hildebrand and A. G\"o\ss.
+\newblock Complexity of Integer Programming in Reverse Convex Sets via Boundary Hyperplane Cover.
+\newblock arXiv:2409.05308v2, September 13, 2026.
+\newblock \url{https://arxiv.org/abs/2409.05308v2}.
+\end{thebibliography}
+\end{document}

@@ -10,6 +10,8 @@ I welcome improvements to the work in this repository through pull requests, inc
 
 ## Papers
 
+- [An ETH Lower Bound for Reverse-Convex Integer Feasibility with a Boundary Hyperplane Cover](reverse-convex-eth/main.tex) ([PDF](reverse-convex-eth/main.pdf)). Research question and direction by Robert Hildebrand; AI-assisted mathematical draft. Gives a Clique reduction using axis-aligned boxes, establishing an ETH obstruction to dimension-sublinear exponents and W[1]-hardness in the dimension. Separates the variable-set-count result from the unresolved fixed-set-count case.
+
 - [Extension Complexity Lower Bounds for Mixed-Integer Extended Formulations: A corrected argument using families of formulations](matching-milef-revision/main-online-revised.tex). An AI-assisted revision of an earlier paper by Robert Hildebrand, Robert Weismantel, and Rico Zenklusen. The draft gives a weaker lower bound using a family of formulations, explains the error in the original proof, and discusses the stronger results of Cevallos, Weltge, and Zenklusen. The LaTeX source is self-contained, including its bibliography.
 
 - [Euclidean Steinitz Bounds for Graver Bases and Integer Programming](euclidean-steinitz-ip/main.tex) ([PDF](euclidean-steinitz-ip/main.pdf)). An AI-generated working draft deriving Graver, proximity, finite-state, and two-level block-matrix bounds from an explicit Euclidean Steinitz hypothesis. Includes literature comparisons and separates proved conditional consequences from the open four-block application.
@@ -18,6 +20,7 @@ I welcome improvements to the work in this repository through pull requests, inc
 
 To cite an individual preprint, use the BibTeX entry in its directory. Each paper provides a copyable citation in its README and a downloadable `citation.bib` file:
 
+- [Reverse-convex feasibility ETH lower bound](reverse-convex-eth/README.md#citation) ([BibTeX](reverse-convex-eth/citation.bib)).
 - [Euclidean Steinitz bounds](euclidean-steinitz-ip/README.md#citation) ([BibTeX](euclidean-steinitz-ip/citation.bib)).
 - [Corrected matching MILEF argument](matching-milef-revision/README.md#citation) ([BibTeX](matching-milef-revision/citation.bib)).
 
